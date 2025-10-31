@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard - Ver URL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+<main class="flex flex-col items-center p-6">
+
+  <div class="bg-white text-black p-6 rounded shadow w-full max-w-lg">
+    <h2 class="text-2xl font-bold mb-4">Detalle de la URL</h2>
+    <p><strong>URL Original:</strong> <span th:text="${url.originalUrl}">URL Original</span></p>
+    <p><strong>Alias Actual:</strong> <span th:text="${url.shortUrl}">Short URL</span></p>
+
+    <form action="/dashboard/urls/update" method="post" class="mt-4">
+
+      <input type="hidden" name="originalShort" th:value="${url.shortUrl}" />
+      <label for="newShort" class="block font-semibold">Nuevo Alias:</label>
+      <input type="text" id="newShort" name="newShort"
+             class="w-full border border-gray-300 p-2 rounded mt-1"
+             placeholder="Ingrese el nuevo alias" required />
+      <button type="submit" class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+        Actualizar Alias
+      </button>
+    </form>
+  </div>
+
+  <div class="mt-6">
+    <a href="/dashboard/urls" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-200">
+      <i class="ri-arrow-left-line text-xl"></i> Regresar
+    </a>
+  </div>
+
+  <div class="mt-4">
+    <a th:href="@{'/estadisticas?shortUrl=' + ${url.shortUrl}}"
+       class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200">
+      Ver estadísticas
+    </a>
+  </div>
+
+</main>
+</body>
+</html>

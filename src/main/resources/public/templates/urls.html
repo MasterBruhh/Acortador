@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Dashboard - Urls - URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+            href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+            rel="stylesheet"
+    />
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+
+<div class="flex min-h-screen">
+
+    <aside class="w-64 bg-[#1e2a5a] p-6">
+
+        <div class="mb-8">
+            <div class="flex items-center gap-1 text-2xl font-bold tracking-[0.15em]">
+                <span onclick="window.location.href='/index'" style="cursor: pointer;">URL</span>
+                <span onclick="window.location.href='/index'" style="cursor: pointer;" class="text-sky-500">.</span>
+            </div>
+        </div>
+
+        <nav>
+            <h2 class="text-xs font-semibold uppercase mb-4">Pages</h2>
+            <ul class="space-y-2">
+                <li>
+                    <a href="/index" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3"/>
+                        </svg>
+                        Inicio
+                    </a>
+                </li>
+                <li th:if="${currentUser != null && currentUser.role == 'admin'}">
+                    <a href="/dashboard/users" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5V4m0 0L9 8m4-4l4 4"/>
+                        </svg>
+                        Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/urls" class="flex items-center p-3 rounded-lg transition bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Urls
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="flex-1 p-6">
+
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Urls</h1>
+            <div class="flex items-center gap-4">
+                <div id="greetingText" class="text-lg"></div>
+                <div id="currentTime" class="text-sm text-gray-300"></div>
+            </div>
+        </header>
+
+        <section>
+            <div class="mb-4 flex justify-end">
+                <a href="/dashboard/urls-acortar" id="acortarEnlaceBtn"
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    Acortar Enlace
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 shadow-md rounded-lg">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Short
+                            Link
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Original Link
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Clicks
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Action
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody id="urlsTableBody" class="bg-white divide-y divide-gray-200 text-gray-900">
+
+                    <tr th:each="url : ${urls}">
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a th:href="@{'/go/' + ${url.shortUrl}}" class="text-blue-600 hover:underline"
+                               target="_blank" th:text="${url.shortUrl}">Short URL</a>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a th:href="${url.originalUrl}"
+                               class="transition line-clamp-1 hover:underline hover:text-blue-600" target="_blank"
+                               th:text="${#strings.length(url.originalUrl) > 35 ? url.originalUrl.substring(0, 35) + '…' : url.originalUrl}">
+                                Original URL
+                            </a>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap"
+                            th:text="${url.accessCount != null ? url.accessCount : 'N/A'}">N/A
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-800/50">Active</span>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap"
+                            th:text="${url.user != null ? url.user.username : 'N/A'}">N/A
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <a th:href="@{'/dashboard/urls-view?shortUrl=' + ${url.shortUrl}}"
+                                   class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                                    View
+                                </a>
+                                <form action="/dashboard/urls/delete" method="post"
+                                      onsubmit="return confirm('¿Estás seguro de eliminar esta URL?');">
+                                    <input type="hidden" name="shortUrl" th:value="${url.shortUrl}"/>
+                                    <button type="submit"
+                                            class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker
+            .register('/js/service-worker.js')
+            .then(() => console.log('Service Worker registrado con éxito'))
+            .catch(err => console.error('Error registrando el Service Worker', err));
+    }
+
+    const OFFLINE_LINKS_KEY = 'pending_links';
+    let isSyncing = false;
+    let originalSectionContent = null;
+
+    async function syncOfflineLinks() {
+        if (isSyncing) return;
+        isSyncing = true;
+
+        try {
+            let pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+            if (pendingLinks.length === 0) return;
+
+            console.log('Sincronizando', pendingLinks.length, 'enlaces pendientes');
+
+            const successfulIds = [];
+
+            const syncResults = await Promise.allSettled(
+                pendingLinks.map(async link => {
+                    try {
+                        const fd = new FormData();
+                        fd.append('url', link.url);
+                        const response = await fetch('/dashboard/urls/acortar', {
+                            method: 'POST',
+                            body: fd,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (response.ok) {
+                            successfulIds.push(link.id);
+                            return {success: true, id: link.id};
+                        }
+                        return {success: false, id: link.id};
+                    } catch (err) {
+                        console.warn('Error subiendo enlace offline:', err);
+                        return {success: false, id: link.id};
+                    }
+                })
+            );
+
+            const failedLinks = pendingLinks.filter(link =>
+                !successfulIds.includes(link.id)
+            );
+
+            if (failedLinks.length > 0) {
+                localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(failedLinks));
+            } else {
+                localStorage.removeItem(OFFLINE_LINKS_KEY);
+            }
+
+            if (successfulIds.length > 0) {
+                try {
+                    const resp = await fetch('/urls');
+                    if (resp.ok) {
+                        const data = await resp.json();
+
+                        const cleanedUrls = data.filter(url => !url.shortUrl.startsWith('offline-'));
+                        localStorage.setItem('myUrls', JSON.stringify(cleanedUrls));
+
+                        if (window.location.pathname.includes('/dashboard/urls')) {
+                            window.location.reload();
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error recargando URLs tras sync:', e);
+                }
+            }
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    window.addEventListener('online', async function () {
+        console.log('Conexión restablecida. Iniciando sincronización...');
+        await syncOfflineLinks();
+
+        try {
+            const resp = await fetch('/urls');
+            if (resp.ok) {
+                const data = await resp.json();
+                localStorage.setItem('myUrls', JSON.stringify(data));
+                if (window.location.pathname.includes('/dashboard/urls')) {
+                    window.location.reload();
+                }
+            }
+        } catch (e) {
+            console.error('Error recargando URLs tras sync:', e);
+        }
+    });
+
+    async function loadUrls() {
+        try {
+            const resp = await fetch('/urls');
+            if (!resp.ok) throw new Error('Error al hacer fetch: ' + resp.status);
+            const data = await resp.json();
+            localStorage.setItem('myUrls', JSON.stringify(data));
+            renderUrls(data);
+        } catch (error) {
+            console.warn('Posiblemente offline. Usando localStorage. Detalle:', error);
+            const offlineData = localStorage.getItem('myUrls');
+            if (offlineData) {
+                renderUrls(JSON.parse(offlineData));
+            } else {
+                alert('No hay datos almacenados para offline');
+            }
+        }
+    }
+
+    function renderUrls(urlList) {
+        const tbody = document.getElementById('urlsTableBody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        urlList.forEach(url => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="px-6 py-4 whitespace-nowrap">
+                <a href="/go/${url.shortUrl}" class="text-blue-600 hover:underline" target="_blank">${url.shortUrl}</a>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <a href="${url.originalUrl}" class="transition line-clamp-1 hover:underline hover:text-blue-600"
+   target="_blank">${url.originalUrl.length > 35 ? url.originalUrl.substring(0, 35) + '…' : url.originalUrl}</a>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                ${url.accessCount ?? 'N/A'}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-800/50">Active</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                ${url.user && url.user.username ? url.user.username : 'N/A'}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex space-x-2">
+                  <a href="/dashboard/urls-view?shortUrl=${url.shortUrl}" data-short-url="${url.shortUrl}" class="view-url-btn px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    View
+                  </a>
+                  <form action="/dashboard/urls/delete" method="post" onsubmit="return confirm('¿Estás seguro de eliminar esta URL?');">
+                    <input type="hidden" name="shortUrl" value="${url.shortUrl}"/>
+                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+
+        document.querySelectorAll('.view-url-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const shortUrl = this.getAttribute('data-short-url');
+                if (!navigator.onLine) {
+                    showOfflineUrlView(shortUrl);
+                } else {
+                    handleUrlView(this.getAttribute('href'));
+                }
+            });
+        });
+    }
+
+    function showOfflineUrlView(shortUrl) {
+
+        if (!originalSectionContent) {
+            const contentContainer = document.querySelector("section");
+            if (contentContainer) {
+                originalSectionContent = contentContainer.innerHTML;
+            }
+        }
+
+        const myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+        const urlData = myUrls.find(url => url.shortUrl === shortUrl);
+
+        if (!urlData) {
+            alert('No se encontró información para esta URL en modo offline');
+            return;
+        }
+
+        const contentContainer = document.querySelector("section");
+        if (contentContainer) {
+            contentContainer.innerHTML = `
+                            <div class="bg-white text-black p-6 rounded shadow w-full max-w-lg mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Detalle de la URL (Modo Offline)</h2>
+                    <div class="p-2 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">Offline</div>
+                </div>
+
+                <div class="my-4 space-y-2">
+                    <p><strong>URL Original:</strong> <a href="${urlData.originalUrl}" target="_blank" class="text-blue-600 hover:underline">${urlData.originalUrl}</a></p>
+                    <p><strong>Alias:</strong> <span>${urlData.shortUrl}</span></p>
+                    <p><strong>Clicks:</strong> <span>${urlData.accessCount || 0}</span></p>
+                    <p><strong>Estado:</strong> <span class="px-2 py-1 text-xs font-semibold rounded-md bg-green-800/50 text-white">Activo</span></p>
+                </div>
+
+                <div class="mt-5 p-3 bg-yellow-500/20 rounded-lg text-yellow-800">
+                    <p>Estás trabajando en modo offline. La información mostrada es la almacenada localmente en tu dispositivo.</p>
+                </div>
+
+                <button id="backToListBtn" class="mt-4 px-4 py-2 w-full bg-gray-500 text-white rounded hover:bg-gray-600 transition">
+                    Volver a la lista
+                </button>
+            </div>
+            `;
+
+            document.getElementById('backToListBtn').addEventListener('click', () => {
+                if (originalSectionContent) {
+                    contentContainer.innerHTML = originalSectionContent;
+                    originalSectionContent = null;
+                }
+                loadUrls();
+            });
+        }
+    }
+
+    function handleUrlView(url) {
+
+        if (!originalSectionContent) {
+            const contentContainer = document.querySelector("section");
+            if (contentContainer) {
+                originalSectionContent = contentContainer.innerHTML;
+            }
+        }
+
+        fetch(url)
+            .then(response => response.text())
+            .then(htmlString => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlString, "text/html");
+                const newFragment = doc.querySelector("div[th\\:fragment='form']") || doc.querySelector("body");
+                if (newFragment) {
+                    const contentContainer = document.querySelector("section");
+                    if (contentContainer) {
+                        contentContainer.innerHTML = newFragment.innerHTML;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Error al cargar la vista de URL:", err);
+                const shortUrlMatch = url.match(/shortUrl=([^&]*)/);
+                if (shortUrlMatch && shortUrlMatch[1]) {
+                    showOfflineUrlView(shortUrlMatch[1]);
+                }
+            });
+    }
+
+    async function getPreview() {
+        const urlValue = document.getElementById('inputUrl')?.value;
+        if (!urlValue) {
+            alert('Ingresa una URL para obtener la vista previa.');
+            return;
+        }
+        try {
+            const response = await fetch('/preview?url=' + encodeURIComponent(urlValue));
+            let html = "<h4 class='font-semibold'>Vista Previa:</h4>";
+            if (response.ok) {
+                const previewData = await response.json();
+                if (previewData.data) {
+                    const data = previewData.data;
+                    html += `<strong>Título:</strong> ${data.title || 'No disponible'}<br>`;
+                    html += `<strong>Descripción:</strong> ${data.description || 'No disponible'}<br>`;
+                    if (data.image && data.image.url) {
+                        html += `<img src="${data.image.url}" alt="Vista Previa" style="max-width:200px;"><br>`;
+                    }
+                } else {
+                    html += "No se encontró información de vista previa.";
+                }
+            } else {
+                html += 'Error al obtener la vista previa.';
+            }
+            document.getElementById('previewContainer').innerHTML = html;
+        } catch (error) {
+            console.error(error);
+            document.getElementById('previewContainer').innerHTML = 'Error al obtener la vista previa.';
+        }
+    }
+
+    const previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) {
+        previewBtn.addEventListener('click', getPreview);
+    }
+
+    function updateGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = "Buen Día!";
+        if (hour >= 12 && hour < 18) {
+            greeting = "Buenas Tardes!";
+        } else if (hour >= 18) {
+            greeting = "Buenas Noches";
+        }
+        document.getElementById("greetingText").textContent = greeting;
+        document.getElementById("currentTime").textContent = now.toLocaleString('es-ES', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        cleanupOfflineData();
+        updateGreeting();
+        setInterval(updateGreeting, 60000);
+
+        loadUrls();
+
+        const contentContainer = document.querySelector("section");
+        if (contentContainer) {
+            originalSectionContent = contentContainer.innerHTML;
+        }
+
+        document.body.addEventListener("click", function(e) {
+            if (e.target.matches('#acortarEnlaceBtn') || e.target.closest('#acortarEnlaceBtn')) {
+                e.preventDefault();
+
+                const contentContainer = document.querySelector("section");
+                if (contentContainer) {
+                    originalSectionContent = contentContainer.innerHTML;
+                }
+
+                if (!navigator.onLine) {
+                    showOfflineUrlForm(contentContainer);
+                    return;
+                }
+
+                fetch("/dashboard/urls-acortar")
+                    .then(response => response.text())
+                    .then(htmlString => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlString, "text/html");
+                        const newFragment = doc.querySelector("div[th\\:fragment='form']") || doc.querySelector("body");
+
+                        if (newFragment) {
+                            if (contentContainer) {
+                                contentContainer.innerHTML = newFragment.innerHTML;
+                                initializeAcortarFeature();
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Error al cargar la vista urls-acortar:", err);
+                        alert("Error al cargar la vista. Verifica tu conexión a internet.");
+                    });
+            }
+        });
+    });
+
+    function showOfflineUrlForm(contentContainer) {
+        if (contentContainer) {
+            contentContainer.innerHTML = `
+            <div class="mb-4 flex justify-between items-center">
+                <h2 class="text-xl font-bold">Acortar URL (Modo Offline)</h2>
+                <button id="backToListBtn" class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 transition">
+                    Volver
+                </button>
+            </div>
+            <div>
+                <form id="shortenForm" class="w-full flex flex-col md:flex-row gap-4 items-center">
+                    <input type="text" id="inputUrl" name="url" placeholder="Ingresa la URL a acortar" required
+                        class="flex-1 text-black border border-gray-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200" />
+                    <button type="submit" class="bg-green-500 text-white py-2 px-3 rounded-md hover:bg-green-600 transition duration-200">
+                        <i class="ri-arrow-right-line text-xl"></i>
+                    </button>
+                </form>
+            </div>
+            <div class="mt-4 p-3 bg-yellow-500/20 rounded-lg text-yellow-200">
+                <p>Estás trabajando en modo offline. Las URLs acortadas se guardarán en tu dispositivo y se sincronizarán cuando vuelvas a estar en línea.</p>
+            </div>
+        `;
+
+            document.getElementById('backToListBtn').addEventListener('click', function () {
+                if (contentContainer && originalSectionContent) {
+                    contentContainer.innerHTML = originalSectionContent;
+
+                    loadUrls();
+                }
+            });
+
+            const shortenForm = document.getElementById('shortenForm');
+            shortenForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const urlInput = document.getElementById('inputUrl');
+                const originalUrl = urlInput.value;
+
+                if (originalUrl) {
+                    const tempLink = {
+                        url: originalUrl,
+                        timestamp: new Date().toISOString(),
+                        id: 'offline-' + Date.now()
+                    };
+
+                    let pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+                    pendingLinks.push(tempLink);
+                    localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(pendingLinks));
+
+                    let myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+                    myUrls.push({
+                        shortUrl: tempLink.id,
+                        originalUrl: originalUrl,
+                        accessCount: 0,
+                        user: {username: 'offline'}
+                    });
+                    localStorage.setItem('myUrls', JSON.stringify(myUrls));
+
+                    alert('URL guardada localmente. Se sincronizará cuando estés en línea.');
+                    urlInput.value = '';
+
+
+                    if (contentContainer && originalSectionContent) {
+                        contentContainer.innerHTML = originalSectionContent;
+                        loadUrls();
+                    }
+                }
+            });
+        }
+    }
+
+    function initializeAcortarFeature() {
+        const previewBtnLocal = document.getElementById('previewBtn');
+        if (previewBtnLocal) {
+            previewBtnLocal.addEventListener('click', async function () {
+                const urlValue = document.getElementById('inputUrl')?.value;
+                if (!urlValue) {
+                    alert('Ingresa una URL para obtener la vista previa.');
+                    return;
+                }
+                try {
+                    const response = await fetch('/preview?url=' + encodeURIComponent(urlValue));
+                    let html = "<h4 class='font-semibold'>Vista Previa:</h4>";
+                    if (response.ok) {
+                        const previewData = await response.json();
+                        if (previewData.data) {
+                            const data = previewData.data;
+                            html += `<strong>Título:</strong> ${data.title || 'No disponible'}<br>`;
+                            html += `<strong>Descripción:</strong> ${data.description || 'No disponible'}<br>`;
+                            if (data.image && data.image.url) {
+                                html += `<img src="${data.image.url}" alt="Vista Previa" style="max-width:200px;"><br>`;
+                            }
+                        } else {
+                            html += "No se encontró información de vista previa.";
+                        }
+                    } else {
+                        html += 'Error al obtener la vista previa.';
+                    }
+                    document.getElementById('previewContainer').innerHTML = html;
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('previewContainer').innerHTML = 'Error al obtener la vista previa.';
+                }
+            });
+        }
+
+        const shortenForm = document.getElementById('shortenForm');
+        if (shortenForm) {
+            shortenForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const formData = new FormData(shortenForm);
+                const originalUrl = formData.get('url');
+
+                if (!navigator.onLine) {
+                    const tempLink = {
+                        url: originalUrl,
+                        timestamp: new Date().toISOString(),
+                        id: 'offline-' + Date.now()
+                    };
+
+                    let pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+                    pendingLinks.push(tempLink);
+                    localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(pendingLinks));
+
+                    let myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+                    myUrls.push({
+                        shortUrl: tempLink.id,
+                        originalUrl: originalUrl,
+                        accessCount: 0,
+                        user: {username: 'offline'}
+                    });
+                    localStorage.setItem('myUrls', JSON.stringify(myUrls));
+
+                    alert('No tienes conexión. El enlace se guardará localmente y se enviará al volver online.');
+                    shortenForm.reset();
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/dashboard/urls/acortar', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.status === 302 || response.redirected) {
+                        window.location.href = '/dashboard/urls';
+                    } else {
+                        window.location.href = '/dashboard/urls';
+                    }
+                } catch (error) {
+                    console.error('Error al acortar enlace online:', error);
+                    alert("Error en la comunicación con el servidor.");
+                }
+            });
+        }
+    }
+
+    function cleanupOfflineData() {
+        const pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+        const myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+
+        const updatedPendingLinks = pendingLinks.filter(pendingLink => {
+            return !myUrls.some(url =>
+                url.originalUrl === pendingLink.url &&
+                !url.shortUrl.startsWith('offline-')
+            );
+        });
+
+        if (updatedPendingLinks.length !== pendingLinks.length) {
+            if (updatedPendingLinks.length > 0) {
+                localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(updatedPendingLinks));
+            } else {
+                localStorage.removeItem(OFFLINE_LINKS_KEY);
+            }
+        }
+
+        const cleanedUrls = myUrls.filter(url =>
+            !url.shortUrl.startsWith('offline-') ||
+            updatedPendingLinks.some(pending => pending.id === url.shortUrl)
+        );
+
+        if (cleanedUrls.length !== myUrls.length) {
+            localStorage.setItem('myUrls', JSON.stringify(cleanedUrls));
+        }
+    }
+
+</script>
+</body>
+</html>

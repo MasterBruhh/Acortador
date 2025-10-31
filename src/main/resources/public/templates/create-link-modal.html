@@ -1,0 +1,35 @@
+<!-- Modal para crear link -->
+<div id="modalCreateLink"
+     class="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm hidden justify-center items-center z-30">
+  <div class="bg-white p-6 w-full max-w-md rounded shadow relative">
+    <button id="closeModalLink" class="absolute top-2 right-2 text-gray-500 font-bold">X</button>
+    <h2 class="text-2xl font-bold mb-4">Crear Nuevo Enlace</h2>
+    <!-- Aquí puedes reusar la lógica del acortador -->
+    <form id="urlFormModal" class="mb-4">
+      <input
+              type="text"
+              id="inputUrlModal"
+              name="url"
+              placeholder="Ingresa la URL"
+              required
+              class="border p-2 rounded w-full mb-2"
+      />
+      <button
+              type="submit"
+              class="bg-green-600 text-white px-4 py-2 rounded mr-2"
+      >
+        Acortar
+      </button>
+      <button
+              type="button"
+              id="previewBtnModal"
+              class="bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        Vista Previa
+      </button>
+    </form>
+    <div id="previewContainerModal" class="mb-4 border p-4 hidden"></div>
+    <div id="resultadoModal" class="mb-2 text-sm text-blue-700"></div>
+    <div id="qrContainerModal" class="mb-2"></div>
+  </div>
+</div>

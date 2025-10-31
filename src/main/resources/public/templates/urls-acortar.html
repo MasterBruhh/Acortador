@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <title>Acortar URL</title>
+  <style>
+    body { font-family: 'Poppins', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+<main class="flex flex-col items-center p-6">
+  <!-- Formulario para acortar -->
+  <div>
+    <form id="shortenForm" action="/dashboard/urls/acortar" method="post" class="w-full max-w-lg flex flex-col md:flex-row gap-4 items-center">
+      <input type="text" id="inputUrl" name="url" placeholder="Ingresa la URL a acortar" required
+             class="flex-1 text-black border border-gray-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200" />
+      <!-- Botón para obtener vista previa -->
+      <button type="button" id="previewBtn" class="bg-purple-500 text-white py-2 px-3 rounded-md hover:bg-purple-600 transition duration-200">
+        <i class="ri-eye-line text-xl"></i>
+      </button>
+      <!-- Botón para acortar -->
+      <button type="submit" class="bg-green-500 text-white py-2 px-3 rounded-md hover:bg-green-600 transition duration-200">
+        <i class="ri-arrow-right-line text-xl"></i>
+      </button>
+    </form>
+  </div>
+  <!-- Contenedor para mostrar la respuesta (enlace acortado y QR) -->
+  <div id="previewContainer" class="mt-4 w-full max-w-lg bg-white text-black p-4 rounded shadow"></div>
+  <!-- Botón de Regresar -->
+  <div class="mt-4">
+    <a href="/dashboard/urls" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition duration-200">
+      <i class="ri-arrow-left-line text-xl"></i> Regresar
+    </a>
+  </div>
+</main>
+<script>
+
+  const OFFLINE_LINKS_KEY = 'pending_links';
+  let isSyncing = false; // Add this line
+
+  async function getPreview() {
+    const urlValue = document.getElementById('inputUrl')?.value;
+    if (!urlValue) {
+      alert('Ingresa una URL para obtener la vista previa.');
+      return;
+    }
+    try {
+      const response = await fetch('/preview?url=' + encodeURIComponent(urlValue));
+      let html = "<h4 class='font-semibold'>Vista Previa:</h4>";
+      if (response.ok) {
+        const previewData = await response.json();
+        if (previewData.data) {
+          const data = previewData.data;
+          html += `<strong>Título:</strong> ${data.title || 'No disponible'}<br>`;
+          html += `<strong>Descripción:</strong> ${data.description || 'No disponible'}<br>`;
+          if (data.image && data.image.url) {
+            html += `<img src="${data.image.url}" alt="Vista Previa" style="max-width:200px;"><br>`;
+          }
+        } else {
+          html += "No se encontró información de vista previa.";
+        }
+      } else {
+        html += 'Error al obtener la vista previa.';
+      }
+      document.getElementById('previewContainer').innerHTML = html;
+    } catch (error) {
+      console.error(error);
+      document.getElementById('previewContainer').innerHTML = 'Error al obtener la vista previa.';
+    }
+  }
+
+  const previewBtn = document.getElementById('previewBtn');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', getPreview);
+  }
+
+  const shortenForm = document.getElementById('shortenForm');
+  if (shortenForm) {
+    shortenForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(shortenForm);
+      const originalUrl = formData.get('url');
+
+      if (!navigator.onLine) {
+        const tempLink = {
+          url: originalUrl,
+          timestamp: new Date().toISOString(),
+          id: 'offline-' + Date.now()
+        };
+
+        let pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+        pendingLinks.push(tempLink);
+        localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(pendingLinks));
+
+        let myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+        myUrls.push({
+          shortUrl: tempLink.id,
+          originalUrl: originalUrl,
+          accessCount: 0,
+          user: { username: 'offline' }
+        });
+        localStorage.setItem('myUrls', JSON.stringify(myUrls));
+
+        alert('No tienes conexión. El enlace se guardará localmente y se enviará cuando estés en línea.');
+
+        window.location.href = '/dashboard/urls';
+        return;
+      }
+
+      try {
+        const response = await fetch('/dashboard/urls/acortar', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.status === 302 || response.redirected) {
+          window.location.href = '/dashboard/urls';
+        } else {
+          window.location.href = '/dashboard/urls';
+        }
+      } catch (error) {
+        console.error('Error al acortar enlace online:', error);
+        alert("Error en la comunicación con el servidor.");
+      }
+    });
+  }
+
+  async function syncOfflineLinks() {
+    if (isSyncing) return;
+    isSyncing = true;
+
+    try {
+      let pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+      if (pendingLinks.length === 0) return;
+
+      let successfulLinks = [];
+      let failedLinks = [];
+
+      for (const link of pendingLinks) {
+        try {
+          const fd = new FormData();
+          fd.append('url', link.url);
+          const response = await fetch('/dashboard/urls/acortar', {
+            method: 'POST',
+            body: fd
+          });
+
+          if (response.ok) {
+            successfulLinks.push(link.id);
+          } else {
+            failedLinks.push(link);
+          }
+        } catch (err) {
+          console.warn('Error subiendo enlace offline:', err);
+          failedLinks.push(link);
+        }
+      }
+
+      if (failedLinks.length > 0) {
+        localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(failedLinks));
+      } else {
+        localStorage.removeItem(OFFLINE_LINKS_KEY);
+      }
+
+      if (successfulLinks.length > 0) {
+        try {
+          const resp = await fetch('/urls');
+          if (resp.ok) {
+            const data = await resp.json();
+            localStorage.setItem('myUrls', JSON.stringify(data));
+
+            const cleanedUrls = data.filter(url => !url.shortUrl.startsWith('offline-'));
+            localStorage.setItem('myUrls', JSON.stringify(cleanedUrls));
+
+            window.location.href = '/dashboard/urls';
+          }
+        } catch (e) {
+          console.error('Error recargando URLs tras sync:', e);
+        }
+      }
+    } finally {
+      isSyncing = false;
+    }
+  }
+
+  window.addEventListener('online', syncOfflineLinks);
+
+  function cleanupOfflineData() {
+    const pendingLinks = JSON.parse(localStorage.getItem(OFFLINE_LINKS_KEY)) || [];
+    const myUrls = JSON.parse(localStorage.getItem('myUrls')) || [];
+
+    const updatedPendingLinks = pendingLinks.filter(pendingLink => {
+      return !myUrls.some(url =>
+              url.originalUrl === pendingLink.url &&
+              !url.shortUrl.startsWith('offline-')
+      );
+    });
+
+    if (updatedPendingLinks.length !== pendingLinks.length) {
+      if (updatedPendingLinks.length > 0) {
+        localStorage.setItem(OFFLINE_LINKS_KEY, JSON.stringify(updatedPendingLinks));
+      } else {
+        localStorage.removeItem(OFFLINE_LINKS_KEY);
+      }
+    }
+
+    const cleanedUrls = myUrls.filter(url =>
+            !url.shortUrl.startsWith('offline-') ||
+            updatedPendingLinks.some(pending => pending.id === url.shortUrl)
+    );
+
+    if (cleanedUrls.length !== myUrls.length) {
+      localStorage.setItem('myUrls', JSON.stringify(cleanedUrls));
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    cleanupOfflineData();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="base-url" content="https://bruhurl.azurewebsites.net">
+    <title>Estadísticas del Enlace - URL Shortener</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- AOS para animaciones -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css" />
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+<!-- HEADER -->
+<header class="flex justify-between items-center px-8 py-6" data-aos="fade-down">
+    <div class="flex items-center gap-1 text-2xl font-bold tracking-[0.15em]">
+        <span onclick="window.location.href='/index'" style="cursor: pointer;">URL</span>
+        <span onclick="window.location.href='/index'" style="cursor: pointer;" class="text-sky-500">.</span>
+    </div>
+    <div class="space-x-4">
+        <a href="/index" class="px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-500 hover:text-white transition duration-200">Inicio</a>
+        <a href="/dashboard/urls" class="px-4 py-2 border border-green-500 text-green-500 rounded hover:bg-green-500 hover:text-white transition duration-200">Mis URLs</a>
+    </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main class="flex-grow container mx-auto p-8" data-aos="fade-up">
+    <h1 class="text-3xl font-bold text-center mb-6">Estadísticas del Enlace</h1>
+
+    <!-- Información del Enlace -->
+    <div id="linkInfo" class="mb-8 text-center">
+        <p><strong>Enlace Acortado:</strong> <span id="shortUrlDisplay">Cargando...</span></p>
+        <p><strong>Enlace Original:</strong> <span id="originalUrlDisplay">Cargando...</span></p>
+    </div>
+
+    <!-- Gráficos principales -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Accesos en el Tiempo -->
+        <section class="bg-white text-gray-900 rounded-lg p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4 text-center">Accesos en el Tiempo</h2>
+            <canvas id="accessChart" class="mx-auto" width="400" height="300"></canvas>
+        </section>
+        <!-- Navegadores Utilizados -->
+        <section class="bg-white text-gray-900 rounded-lg p-6 shadow-lg">
+            <h2 class="text-xl font-bold mb-4 text-center">Navegadores Utilizados</h2>
+            <canvas id="browserChart" class="mx-auto" width="400" height="300"></canvas>
+        </section>
+    </div>
+
+    <!-- Gráfico de Distribución de Accesos por Hora -->
+    <div class="mt-8 bg-white text-gray-900 rounded-lg p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-center">Accesos por Hora</h2>
+        <canvas id="hourChart" class="mx-auto" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Nuevo: Gráfico de Distribución de Plataformas -->
+    <div class="mt-8 bg-white text-gray-900 rounded-lg p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-center">Distribución de Plataformas</h2>
+        <canvas id="platformChart" class="mx-auto" width="400" height="300"></canvas>
+    </div>
+
+    <!-- Tabla de Registro de Accesos -->
+    <div class="mt-8 bg-white text-gray-900 rounded-lg p-6 shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-center">Registro de Accesos</h2>
+        <table class="min-w-full text-sm">
+            <thead>
+            <tr class="border-b">
+                <th class="px-4 py-2">Fecha y Hora</th>
+                <th class="px-4 py-2">IP</th>
+                <th class="px-4 py-2">Navegador</th>
+                <th class="px-4 py-2">Plataforma</th>
+            </tr>
+            </thead>
+            <tbody id="accessTableBody">
+            <!-- Se llenará dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Botón para regresar -->
+    <div class="mt-8 text-center">
+        <a href="/dashboard/urls" class="px-6 py-3 border border-blue-500 text-blue-500 rounded hover:bg-blue-500 hover:text-white transition duration-200">Volver a Mis URLs</a>
+    </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="bg-[#1e2a5a] py-6" data-aos="fade-up">
+    <div class="max-w-5xl mx-auto px-8 text-center">
+        <p class="text-white">&copy; 2025 URL Shortener. Todos los derechos reservados.</p>
+        <p class="text-sm text-white">Diseñado con pasión y tecnología de punta.</p>
+    </div>
+</footer>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 1000, once: true });
+
+    // Obtener parámetros de la URL
+    function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+    }
+
+    const shortUrlParam = getQueryParam('shortUrl');
+    if (!shortUrlParam) {
+        alert('No se proporcionó el identificador del enlace.');
+        window.location.href = '/dashboard/urls';
+    }
+
+    async function loadStats() {
+        try {
+            const response = await fetch('/stats/' + shortUrlParam);
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Datos recibidos:", data); // Depuración
+                const accessTimes = data.accessTimes;   // array con fechas
+                const browserStats = data.browserStats; // objeto { navegador: cantidad, ... }
+
+                // Actualizar información del enlace
+                const baseUrl = document.querySelector('meta[name="base-url"]').getAttribute("content");
+                document.getElementById('shortUrlDisplay').textContent = baseUrl + "/go/" + shortUrlParam;
+                document.getElementById('originalUrlDisplay').textContent = data.originalUrl || "No disponible";
+
+                drawAccessChart(accessTimes);
+                drawBrowserChart(browserStats);
+                drawHourChart(data.accessDetails);
+                drawPlatformChart(data.accessDetails);
+                if (data.accessDetails && Array.isArray(data.accessDetails)) {
+                    populateAccessTable(data.accessDetails);
+                }
+            } else {
+                alert('Error al obtener las estadísticas del enlace.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error al cargar las estadísticas.');
+        }
+    }
+
+    function drawAccessChart(accessTimes) {
+        accessTimes.sort((a, b) => new Date(a) - new Date(b));
+        const labels = accessTimes.map(date => new Date(date).toLocaleString());
+        const dataPoints = accessTimes.map((_, index) => index + 1);
+        const ctx = document.getElementById('accessChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Accesos acumulados',
+                    data: dataPoints,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Fecha y Hora' } },
+                    y: { title: { display: true, text: 'Cantidad de Accesos' }, beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    function drawBrowserChart(browserStats) {
+        const labels = Object.keys(browserStats);
+        const data = Object.values(browserStats);
+        const ctx = document.getElementById('browserChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6']
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+
+    function drawHourChart(accessDetails) {
+        if (!accessDetails || accessDetails.length === 0) return;
+        const counts = Array(24).fill(0);
+        accessDetails.forEach(detail => {
+            const hour = new Date(detail.timestamp).getHours();
+            counts[hour]++;
+        });
+        const ctx = document.getElementById('hourChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [...Array(24).keys()], // 0 a 23
+                datasets: [{
+                    label: 'Accesos por hora',
+                    data: counts,
+                    backgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Hora del día' } },
+                    y: { title: { display: true, text: 'Cantidad de Accesos' }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // Nuevo: Gráfico de distribución de plataformas
+    function drawPlatformChart(accessDetails) {
+        if (!accessDetails || accessDetails.length === 0) return;
+        // Contar las plataformas
+        const counts = {};
+        accessDetails.forEach(detail => {
+            const platform = detail.platform || "Desconocido";
+            counts[platform] = (counts[platform] || 0) + 1;
+        });
+        const labels = Object.keys(counts);
+        const data = Object.values(counts);
+        const ctx = document.getElementById('platformChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Plataformas',
+                    data: data,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+        });
+    }
+
+    function populateAccessTable(accessDetails) {
+        const tbody = document.getElementById('accessTableBody');
+        tbody.innerHTML = '';
+        accessDetails.forEach(detail => {
+            const row = document.createElement('tr');
+            row.classList.add('border-b');
+            row.innerHTML = `
+          <td class="px-4 py-2">${new Date(detail.timestamp).toLocaleString()}</td>
+          <td class="px-4 py-2">${detail.ip}</td>
+          <td class="px-4 py-2">${detail.browser}</td>
+          <td class="px-4 py-2">${detail.platform}</td>
+        `;
+            tbody.appendChild(row);
+        });
+    }
+
+    loadStats();
+</script>
+</body>
+</html>

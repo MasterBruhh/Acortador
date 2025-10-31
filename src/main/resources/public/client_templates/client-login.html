@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Cliente - Login</title>
+    <!-- Incluir Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2 class="mb-4">Iniciar Sesión</h2>
+
+    <!-- Formulario para GRPC -->
+    <div th:if="${backend == 'grpc'}">
+        <form th:action="@{/grpc-client/login}" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="Ingresa tu usuario">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Ingresa tu contraseña">
+            </div>
+            <button type="submit" class="btn btn-primary">Ingresar (gRPC)</button>
+        </form>
+    </div>
+
+    <!-- Formulario para REST -->
+    <div th:if="${backend != 'grpc'}">
+        <form th:action="@{/client/login}" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="Ingresa tu usuario">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Ingresa tu contraseña">
+            </div>
+            <button type="submit" class="btn btn-primary">Ingresar (REST)</button>
+        </form>
+    </div>
+
+    <div th:if="${param.error}">
+        <div class="alert alert-danger mt-3" role="alert">
+            <span th:text="${param.error}"></span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

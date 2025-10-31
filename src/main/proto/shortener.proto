@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "edu.pucmm.eict.clientes.grpc";
+option java_outer_classname = "ShortenerProto";
+
+message AccessDetail {
+  string timestamp = 1;
+  string browser = 2;
+  string ip = 3;
+  string clientDomain = 4;
+  string platform = 5;
+}
+
+message UrlStatistics {
+  int32 accessCount = 1;
+  repeated string accessTimes = 2;
+  repeated AccessDetail accessDetails = 3;
+}
+
+message UrlEntry {
+  string originalUrl = 1;
+  string shortUrl = 2;
+  string createdAt = 3;
+  UrlStatistics statistics = 4;
+  string previewImageBase64 = 5;
+}
+
+message CreateUrlRequest {
+  string originalUrl = 1;
+  string username = 2;
+}
+
+message CreateUrlResponse {
+  UrlEntry url = 1;
+}
+
+message ListUrlsRequest {
+  string username = 1;
+}
+
+message ListUrlsResponse {
+  repeated UrlEntry urls = 1;
+}
+
+service UrlShortenerService {
+  rpc CreateUrl(CreateUrlRequest) returns (CreateUrlResponse);
+  rpc ListUrls(ListUrlsRequest) returns (ListUrlsResponse);
+}

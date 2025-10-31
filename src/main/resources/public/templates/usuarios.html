@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard - Users - URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+<!-- Contenedor principal con sidebar y contenido -->
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#1e2a5a] p-6">
+        <!-- Logo -->
+        <div class="mb-8">
+            <div class="flex items-center gap-1 text-2xl font-bold tracking-[0.15em]">
+                <span onclick="window.location.href='/index'" style="cursor: pointer;">URL</span>
+                <span onclick="window.location.href='/index'" style="cursor: pointer;" class="text-sky-500">.</span>
+            </div>
+        </div>
+        <!-- Menú de navegación -->
+        <nav>
+            <h2 class="text-xs font-semibold uppercase mb-4">Pages</h2>
+            <ul class="space-y-2">
+                <li>
+                    <a href="/index" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                        </svg>
+                        Inicio
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/users" class="flex items-center p-3 rounded-lg transition bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5V4m0 0L9 8m4-4l4 4" />
+                        </svg>
+                        Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/urls" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Urls
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    <!-- Contenido principal -->
+    <div class="flex-1 p-6">
+        <!-- Header del dashboard -->
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Users</h1>
+            <div class="flex items-center gap-4">
+                <div id="greetingText" class="text-lg"></div>
+                <div id="currentTime" class="text-sm text-gray-300"></div>
+            </div>
+        </header>
+        <!-- Área de contenido: Tabla de usuarios -->
+        <section>
+            <div class="mb-4 flex justify-end">
+                <a href="/dashboard/users/add" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    Agregar Usuario
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 shadow-md rounded-lg text-gray-900">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created at</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Se itera la lista de usuarios pasada desde el backend -->
+                    <tr th:each="user : ${users}">
+                        <td class="px-6 py-4 whitespace-nowrap" th:text="${user.username}">Username</td>
+                        <!-- Campos fijos 'N/A' -->
+                        <td class="px-6 py-4 whitespace-nowrap">N/A</td>
+                        <td class="px-6 py-4 whitespace-nowrap">N/A</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                  <span th:classappend="${user.role == 'admin'} ? ' bg-red-100 text-red-800' : ' bg-green-100 text-green-800'"
+                        class="px-2 py-1 text-xs font-semibold rounded-full" th:text="${user.role}">Role</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex space-x-2">
+                                <a th:href="@{'/dashboard/users/' + ${user.username}}" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                                    View
+                                </a>
+                                <!-- Formulario para actualizar el rol -->
+                                <form action="/dashboard/users/updateRole" method="post" class="inline-block">
+                                    <input type="hidden" name="username" th:value="${user.username}" />
+                                    <select name="role" class="border p-1 rounded">
+                                        <option value="user" th:selected="${user.role == 'user'}">User</option>
+                                        <option value="admin" th:selected="${user.role == 'admin'}">Admin</option>
+                                    </select>
+                                    <button type="submit" class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition">
+                                        Update Role
+                                    </button>
+                                </form>
+                                <!-- Botón para eliminar solo si el usuario no es admin -->
+                                <form action="/dashboard/users/delete" method="post" onsubmit="return confirm('¿Estás seguro de eliminar este usuario?');" class="inline-block">
+                                    <input type="hidden" name="username" th:value="${user.username}" />
+                                    <button type="submit" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition" th:if="${user.role != 'admin'}">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+<!-- Script para actualizar saludo y hora -->
+<script>
+    function updateGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = "Buen Día!";
+        if (hour >= 12 && hour < 18) {
+            greeting = "Buenas Tardes!";
+        } else if (hour >= 18) {
+            greeting = "Buenas Noches";
+        }
+        document.getElementById("greetingText").textContent = greeting;
+        document.getElementById("currentTime").textContent = now.toLocaleString('es-ES', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+    }
+    updateGreeting();
+    setInterval(updateGreeting, 60000);
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const addUserBtn = document.querySelector('a[href="/dashboard/users/add"]');
+        if (addUserBtn) {
+            addUserBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                fetch("/dashboard/users/add")
+                    .then(response => response.text())
+                    .then(htmlString => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlString, "text/html");
+                        const newFragment = doc.querySelector("div[th\\:fragment='form']") || doc.querySelector("body");
+
+                        if (newFragment) {
+                            const contentContainer = document.querySelector("section");
+                            if (contentContainer) {
+                                contentContainer.innerHTML = newFragment.innerHTML;
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Error al cargar el formulario de usuario:", err));
+            });
+        }
+    });
+</script>
+</body>
+</html>

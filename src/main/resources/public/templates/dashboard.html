@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard - URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e2a5a] text-white">
+<!-- Contenedor principal con sidebar y contenido -->
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-[#1e2a5a] p-6">
+        <!-- Logo -->
+        <div class="mb-8">
+            <div class="flex items-center gap-1 text-2xl font-bold tracking-[0.15em]">
+                <span onclick="window.location.href='/index'" style="cursor: pointer;">URL</span>
+                <span onclick="window.location.href='/index'" style="cursor: pointer;" class="text-sky-500">.</span>
+            </div>
+        </div>
+        <!-- Menú de navegación -->
+        <nav>
+            <h2 class="text-xs font-semibold uppercase mb-4">Pages</h2>
+            <ul class="space-y-2">
+                <li>
+                    <a href="/index" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3" />
+                        </svg>
+                        Inicio
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/users" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5V4m0 0L9 8m4-4l4 4" />
+                        </svg>
+                        Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/urls" class="flex items-center p-3 rounded-lg transition hover:bg-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Urls
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+    <!-- Contenido principal -->
+    <div class="flex-1 p-6">
+        <!-- Header del dashboard -->
+        <header class="mb-8 flex justify-between items-center">
+            <h1 class="text-3xl font-bold">Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <div id="greetingText" class="text-lg"></div>
+                <div id="currentTime" class="text-sm text-gray-300"></div>
+            </div>
+        </header>
+        <!-- Área de contenido -->
+        <section>
+            <p>Bienvenido a tu panel de administración. En desarrollo</p>
+            <!-- Aquí puedes incluir gráficos, tablas u otros widgets según lo requieras -->
+        </section>
+    </div>
+</div>
+<!-- Script para actualizar saludo y hora -->
+<script>
+    function updateGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = "Buen Día!";
+        if (hour >= 12 && hour < 18) {
+            greeting = "Buenas Tardes!";
+        } else if (hour >= 18) {
+            greeting = "Buenas Noches";
+        }
+        const greetingText = document.getElementById("greetingText");
+        if (greetingText) {
+            greetingText.textContent = greeting;
+        }
+        const currentTime = document.getElementById("currentTime");
+        if (currentTime) {
+            currentTime.textContent = now.toLocaleString('es-ES', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+    }
+    updateGreeting();
+    setInterval(updateGreeting, 60000);
+</script>
+</body>
+</html>
