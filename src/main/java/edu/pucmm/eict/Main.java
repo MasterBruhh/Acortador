@@ -62,6 +62,17 @@ public class Main {
             config.fileRenderer(new JavalinThymeleaf(templateEngine));
         }).start(port);
 
+        // SEGURIDAD: Headers HTTP de seguridad (Mitigación Clickjacking y MIME Sniffing)
+        app.after(ctx -> {
+            // X-Frame-Options: Previene que la página sea incrustada en iframes
+            // DENY = Bloquea completamente el uso de iframes (máxima protección)
+            ctx.header("X-Frame-Options", "DENY");
+            
+            // X-Content-Type-Options: Previene MIME type sniffing
+            // nosniff = Fuerza al navegador a respetar el Content-Type declarado
+            ctx.header("X-Content-Type-Options", "nosniff");
+        });
+
         // Ejemplo de middleware para validar JWT
         app.before("/api/*", ctx -> {
             if (ctx.path().equals("/api/login")) {
