@@ -18,7 +18,7 @@
     <p><strong>Alias Actual:</strong> <span th:text="${url.shortUrl}">Short URL</span></p>
 
     <form action="/dashboard/urls/update" method="post" class="mt-4">
-
+      <input type="hidden" name="csrfToken" th:value="${csrfToken}"/>
       <input type="hidden" name="originalShort" th:value="${url.shortUrl}" />
       <label for="newShort" class="block font-semibold">Nuevo Alias:</label>
       <input type="text" id="newShort" name="newShort"

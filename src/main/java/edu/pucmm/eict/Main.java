@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import edu.pucmm.eict.util.Database; // added
+import edu.pucmm.eict.util.CsrfUtil;
 
 public class Main {
     public static void main(String[] args) {
@@ -96,10 +97,14 @@ public class Main {
             if (!ctx.path().startsWith("/api/")) {
                 Usuario currentUser = ctx.sessionAttribute("user");
                 ctx.attribute("currentUser", currentUser);
+                
+                // CSRF Protection: Inyectar token CSRF en todas las vistas
+                String csrfToken = ctx.sessionAttribute("csrfToken");
+                ctx.attribute("csrfToken", csrfToken);
             }
         });
 
-        // Rutas de autenticación
+        // Rutas de autenticación (sin protección CSRF - no requieren token)
         app.get("/register", authController.showRegisterPage);
         app.get("/login", authController.showLoginPage);
         app.get("/index", authController.showIndexPage);
@@ -109,7 +114,7 @@ public class Main {
         // Ruta para el login vía API
         app.post("/api/login", apiAuthController.loginUserApi);
 
-        // Dashboard
+        // Dashboard - Middleware de autenticación
         app.get("/dashboard", ctx -> {
             Usuario usuario = ctx.sessionAttribute("user");
             if (usuario != null) {
@@ -124,6 +129,41 @@ public class Main {
             if (ctx.sessionAttribute("user") == null) {
                 // Redirect to the login page if not authenticated.
                 ctx.redirect("/login");
+            }
+        });
+
+        // CSRF Protection: Middleware para validar tokens en peticiones POST a /dashboard/*
+        // IMPORTANTE: Este middleware debe estar DESPUÉS de la autenticación pero ANTES de las rutas POST
+        app.before("/dashboard/*", ctx -> {
+            if ("POST".equals(ctx.method())) {
+                // Obtener el token de la sesión
+                String sessionToken = ctx.sessionAttribute("csrfToken");
+                
+                // Obtener el token de la petición (campo de formulario o header para AJAX)
+                String requestToken = ctx.formParam("csrfToken");
+                if (requestToken == null) {
+                    requestToken = ctx.header("X-CSRF-Token");
+                }
+                
+                // Validar el token usando comparación de tiempo constante
+                if (!CsrfUtil.validateToken(sessionToken, requestToken)) {
+                    System.out.println("[CSRF] Token inválido o ausente. Petición bloqueada.");
+                    System.out.println("[CSRF]    - Path: " + ctx.path());
+                    System.out.println("[CSRF]    - Origin: " + ctx.header("Origin"));
+                    System.out.println("[CSRF]    - Referer: " + ctx.header("Referer"));
+                    ctx.status(403).result("Acción no permitida: Token CSRF inválido o ausente");
+                    return; // Bloquear la petición
+                }
+                
+                // Validación adicional: Origin header (defensa en profundidad)
+                String origin = ctx.header("Origin");
+                if (origin != null && !isValidOrigin(origin)) {
+                    System.out.println("[CSRF] Origen no permitido: " + origin);
+                    ctx.status(403).result("Origen no permitido");
+                    return;
+                }
+                
+                System.out.println("[CSRF] Token válido para: " + ctx.path());
             }
         });
 
@@ -146,6 +186,30 @@ public class Main {
         // Registra la ruta POST para acortar URL
         // Fragmento de Main.java
         app.post("/dashboard/urls/acortar", ctx -> {
+            // CSRF Protection: Validar token
+            String sessionToken = ctx.sessionAttribute("csrfToken");
+            String requestToken = ctx.formParam("csrfToken");
+            if (requestToken == null) {
+                requestToken = ctx.header("X-CSRF-Token");
+            }
+            
+            if (!CsrfUtil.validateToken(sessionToken, requestToken)) {
+                System.out.println("[CSRF] Token inválido para /dashboard/urls/acortar");
+                System.out.println("[CSRF]    - Origin: " + ctx.header("Origin"));
+                ctx.status(403).result("Acción no permitida: Token CSRF inválido");
+                return;
+            }
+            
+            // Validación adicional: Origin header
+            String origin = ctx.header("Origin");
+            if (origin != null && !isValidOrigin(origin)) {
+                System.out.println("[CSRF] Origen no permitido: " + origin);
+                ctx.status(403).result("Origen no permitido");
+                return;
+            }
+            
+            System.out.println("[CSRF] Token válido para /dashboard/urls/acortar");
+            
             // Llamamos la lógica que crea la URL (esto no cambia)
             urlController.createShortUrl.handle(ctx);
 
@@ -260,5 +324,28 @@ public class Main {
         app.get("/", ctx -> ctx.redirect("/index"));
 
         System.out.println("Aplicación corriendo en http://localhost:" + port);
+    }
+
+    /**
+     * Método helper para validar el origen de peticiones (protección CSRF adicional).
+     * Verifica que las peticiones provengan del dominio legítimo de la aplicación.
+     * 
+        * @param origin Header Origin de la petición HTTP
+        * @return true si el origen es válido, false en caso contrario
+     */
+    private static boolean isValidOrigin(String origin) {
+        if (origin == null) {
+            return true; // Permitir si no hay header (navegación directa)
+        }
+        
+        // Obtener el dominio permitido desde variable de entorno o default
+        String baseUrl = System.getenv("BASE_URL");
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            baseUrl = "http://localhost:7000";
+        }
+        
+        // Permitir tanto HTTP como HTTPS del mismo dominio
+        return origin.startsWith(baseUrl) || 
+               origin.startsWith(baseUrl.replace("http://", "https://"));
     }
 }

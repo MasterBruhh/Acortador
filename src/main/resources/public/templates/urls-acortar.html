@@ -15,6 +15,9 @@
   <!-- Formulario para acortar -->
   <div>
     <form id="shortenForm" action="/dashboard/urls/acortar" method="post" class="w-full max-w-lg flex flex-col md:flex-row gap-4 items-center">
+      <!-- CSRF Protection Token -->
+      <input type="hidden" name="csrfToken" th:value="${csrfToken}" />
+      
       <input type="text" id="inputUrl" name="url" placeholder="Ingresa la URL a acortar" required
              class="flex-1 text-black border border-gray-300 p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200" />
       <!-- Botón para obtener vista previa -->

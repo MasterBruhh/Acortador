@@ -2,6 +2,7 @@ package edu.pucmm.eict.controladores;
 
 import edu.pucmm.eict.modelos.Usuario;
 import edu.pucmm.eict.services.UserService;
+import edu.pucmm.eict.util.CsrfUtil;
 import io.javalin.http.Handler;
 
 import java.util.Map;
@@ -50,6 +51,12 @@ public class AuthController {
         if (userService.authenticate(username, password)) {
             Usuario loggedUser = userService.getUserByUsername(username);
             ctx.sessionAttribute("user", loggedUser);
+            
+            // CSRF Protection: Generar y almacenar token anti-CSRF
+            String csrfToken = CsrfUtil.generateToken();
+            ctx.sessionAttribute("csrfToken", csrfToken);
+            System.out.println("[CSRF] Token generado para usuario: " + username);
+            
             ctx.redirect("/index");
         } else {
             ctx.redirect("/login?error=Credenciales incorrectas");
